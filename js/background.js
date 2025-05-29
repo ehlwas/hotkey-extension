@@ -1,3 +1,5 @@
+// ANOTHER WAY TO INJECT CONTENT SCRIPTS
+
 // chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 //   if (changeInfo.status === "complete" && tab.url.startsWith("http")) {
 //     chrome.scripting.executeScript({
@@ -11,19 +13,38 @@
 //   }
 // });
 
-chrome.storage.local.get(["hotkeys"], (result) => {
-  console.log(result.hotkeys)
-});
+// END ANOTHER WAY TO INJECT CONTENT SCRIPTS
+
+
+// chrome.storage.local.get(["hotkeys"], (result) => {
+//   console.log(result.hotkeys)
+// });
+
+
+const hotkeysData = {
+    mainSettings: {
+        isOverride: false,
+    },
+    shortcuts: {
+        "Ctrl+H": {
+            shortcutKey: "Ctrl+H",
+            link: "Facebook"
+        }
+    }
+}
+
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-  if (msg.shortcutPressed) {
-    console.log("🚀 Opening link from background...");
-    chrome.tabs.create({ url: "https://facebook.com" });
-  }
+    if (msg.shortcutPressed) {
 
-  // Optional: send acknowledgment back
-  sendResponse({ success: true });
+        
+        console.log("🚀 Opening link from background...");
+        chrome.tabs.create({ url: msg.url });
+    }
 
-  // Needed if you use sendResponse asynchronously
-  return true;
+    // Optional: send acknowledgment back
+    sendResponse({ success: true });
+
+    // Needed if you use sendResponse asynchronously
+    return true;
 });

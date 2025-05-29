@@ -1,0 +1,23 @@
+{
+    "manifest_version": 3,
+    "name": "Hotkey Extension",
+    "version": "1.0.0",
+    "description": "A shortcut key extension for quick access to various functionalities.",
+    "permissions": ["storage", "scripting", "tabs", "activeTab"],
+    "host_permissions": ["<all_urls>"],
+    "options_page": "settings.html",
+    "action": {
+        "default_title": "Hotkey Extension",
+        "default_popup": "popup.html"
+    },
+    "background": {
+        "service_worker": "js/background.js"
+    },
+    "content_scripts": [
+        {
+            "matches": ["<all_urls>"],
+            "js": ["js/contentScript.js"],
+            "run_at": "document_idle"
+        }
+    ]
+}

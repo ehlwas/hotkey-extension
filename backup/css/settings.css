@@ -11,10 +11,9 @@ body {
 }
 
 .h-btn {
-  height: 34px;
-  border: 1px solid transparent;
+  height: 30px;
+  border: 0;
   border-radius: 6px;
-  min-width: 100px;
   padding: 0 10px;
 }
 .h-btn.primary {
@@ -26,17 +25,6 @@ body {
   background-color: #3a3a3a;
 }
 .h-btn.primary:active {
-  background-color: #4a4a4a;
-}
-.h-btn.success {
-  background-color: #3a5f4b;
-  color: #bce2c8;
-  cursor: pointer;
-}
-.h-btn.success:hover {
-  background-color: #3a3a3a;
-}
-.h-btn.success:active {
   background-color: #4a4a4a;
 }
 
@@ -63,17 +51,14 @@ body {
   padding: 10px;
   margin-top: 20px;
 }
-.settings-page .page-content .settings-list-container {
-  margin-top: 20px;
-}
 .settings-page .page-content .settings-list-container .settings-row-c {
   display: flex;
   align-items: center;
   justify-content: space-between;
   border: 1px solid #2c2c2c;
   border-radius: 8px;
-  margin-top: 10px;
   padding: 10px;
+  margin-top: 20px;
 }
 .settings-page .page-content .settings-list-container .settings-row-c .btn-container {
   min-width: 100px;
@@ -82,8 +67,5 @@ body {
   justify-content: flex-end;
 }
 .settings-page .page-content .action-row-container {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
   margin-top: 20px;
 }/*# sourceMappingURL=settings.css.map */
