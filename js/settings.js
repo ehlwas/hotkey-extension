@@ -3,110 +3,182 @@ const defaultHotkeysSettings = {
         isOverride: false,
     },
     shortcuts: {
-        "Ctrl+H": {
-            shortcutKey: "Ctrl+H",
-            link: "Facebook"
+        "Ctrl+Shift+F": {
+            shortcutKey: "Ctrl+Shift+F",
+            link: "https://facebook.com/"
         }
     }
-}
-
-// chrome.storage.local.get(["hotkeys"], (result) => {
-//   console.log(result.hotkeys)
-  
-//   if (!result.hotkeys) {
-//     chrome.storage.local.set({ hotkeys: defaultHotkeysSettings });
-//   }
-// });
-
-const inputValidator = (e) => {
-  e.preventDefault();
-
-  const input = e.target;
-  const keys = [];
-
-  // Require Ctrl, Shift, or Alt
-  if (!(e.ctrlKey || e.shiftKey || e.altKey)) {
-    input.value = "❌ Must start with Ctrl, Shift, or Alt";
-    return;
-  }
-
-  // Capture modifiers
-  if (e.ctrlKey) keys.push("Ctrl");
-  if (e.shiftKey) keys.push("Shift");
-  if (e.altKey) keys.push("Alt");
-
-  // Skip if it's just a modifier
-  if (["ControlLeft", "ControlRight", "ShiftLeft", "ShiftRight", "AltLeft", "AltRight"].includes(e.code)) return;
-
-  // Normalize the main key
-  let key = "";
-
-  // For letters/numbers
-  if (e.code.startsWith("Key")) {
-    key = e.code.replace("Key", "").toUpperCase(); // e.g. KeyA → A
-  } else if (e.code.startsWith("Digit")) {
-    key = e.code.replace("Digit", ""); // e.g. Digit1 → 1
-  } else {
-    key = e.code; // F1, ArrowUp, etc.
-  }
-
-  keys.push(key);
-
-  const shortcut = keys.join(" + ");
-  input.value = shortcut;
 };
 
-const deleteHotkeyButtonFunction = (e) => {
-  const hotkeyId = e.target.dataset.id;
-  const settingsRow = document.getElementById(`settingsRow_${hotkeyId}`);
-  settingsRow.remove();
+function getHotkeys() {
+  return new Promise((resolve, reject) => {
+    chrome.storage.local.get(["hotkeys"], (result) => {
+      if (chrome.runtime.lastError) {
+        reject(chrome.runtime.lastError);
+        return;
+      }
+
+      if (typeof result.hotkeys === "undefined") {
+        // Set default
+        chrome.storage.local.set({ hotkeys: defaultHotkeysSettings }, () => {
+          if (chrome.runtime.lastError) {
+            reject(chrome.runtime.lastError);
+          } else {
+            // console.log("Default hotkeys saved.");
+            resolve(defaultHotkeysSettings);
+          }
+        });
+      } else {
+        resolve(result.hotkeys);
+      }
+    });
+  });
 }
 
-const shortcutInputs = document.querySelectorAll('#shortcutInput');
+// (async () => {
+//   try {
+//     const hotkeysData = await getHotkeys();
+//     console.log("Hotkeys loaded:", hotkeysData);
+//   } catch (err) {
+//     console.error("Error loading hotkeys:", err);
+//   }
+// })();
 
-shortcutInputs.forEach(input => {
-  input.addEventListener('keydown', inputValidator);
+document.addEventListener('DOMContentLoaded', async () => {
+  try {
+    const hotkeysData = await getHotkeys();
+    const shortcuts = hotkeysData.shortcuts || {};
+
+    Object.keys(shortcuts).forEach((key, index) => {
+      const { link, shortcutKey } = shortcuts[key];
+      const newIndex = index + 1;
+
+      settingsListContainer.insertAdjacentHTML('beforeend', `
+        <div id="settingsRow_${newIndex}" class="settings-row-c">
+
+          <div class="form-wrapper">
+            <input type="text" class="h-input primary link-input" value="${link}" placeholder="Put link here">
+          </div>
+
+          <div class="form-wrapper">
+            <input type="text" class="h-input primary shortcut-input" value="${shortcutKey}" placeholder="Hotkey (e.g. Ctrl+Shift+L)" readonly>
+          </div>
+
+          <div class="btn-container">
+            <button class="h-btn primary delete-hotkey-button" data-id="${newIndex}">Delete</button>
+          </div>
+
+        </div>
+      `);
+    });
+
+  } catch (err) {
+    console.error("Error loading hotkeys on DOMContentLoaded:", err);
+  }
 });
 
 const addHotkeyButton = document.getElementById('addHotkeyButton');
 
+// Add new hotkey row
 addHotkeyButton.addEventListener('click', () => {
-  const settingsListContainer = document.getElementById('settingsListContainer');
-
   const newIndex = settingsListContainer.children.length + 1;
 
-  settingsListContainer.innerHTML += `
+  settingsListContainer.insertAdjacentHTML('beforeend', `
     <div id="settingsRow_${newIndex}" class="settings-row-c">
 
-        <div class="form-wrapper">
-            <input type="text" class="h-input primary link-input" placeholder="Put link here">
-        </div>
+      <div class="form-wrapper">
+        <input type="text" class="h-input primary link-input" placeholder="Put link here">
+      </div>
 
-        <div class="form-wrapper">
-            <input type="text" class="h-input primary shortcut-input" placeholder="Hotkey (e.g. Ctrl+Shift+L)" readonly>
-        </div>
+      <div class="form-wrapper">
+        <input type="text" class="h-input primary shortcut-input" placeholder="Hotkey (e.g. Ctrl+Shift+L)" readonly>
+      </div>
 
-        <div class="btn-container">
-            <button class="h-btn primary delete-hotkey-button" data-id="${newIndex}">Delete</button>
-        </div>
+      <div class="btn-container">
+        <button class="h-btn primary delete-hotkey-button" data-id="${newIndex}">Delete</button>
+      </div>
 
     </div>
-  `;
-
-  // Select the new row container
-  const newRow = document.getElementById(`settingsRow_${newIndex}`);
-
-  // Attach events by class within the newRow
-  const newShortcutInput = newRow.querySelector('.shortcut-input');
-  newShortcutInput.addEventListener('keydown', inputValidator);
-
-  const newDeleteButton = newRow.querySelector('.delete-hotkey-button');
-  newDeleteButton.addEventListener('click', deleteHotkeyButtonFunction);
+  `);
 });
 
+const settingsListContainer = document.getElementById('settingsListContainer');
 
-const deleteHotkeyButton = document.querySelectorAll('#deleteHotkeyButton');
+// Input validator function (basic example)
+function inputValidator(e) {
+  e.preventDefault();
 
-deleteHotkeyButton.forEach(button => {
-  button.addEventListener('click', deleteHotkeyButtonFunction);
+  const keys = [];
+  if (!(e.ctrlKey || e.shiftKey || e.altKey)) {
+    e.target.value = "❌ Must start with Ctrl, Shift, or Alt";
+    return;
+  }
+
+  if (e.ctrlKey) keys.push("Ctrl");
+  if (e.shiftKey) keys.push("Shift");
+  if (e.altKey) keys.push("Alt");
+
+  const key = e.key.length === 1 ? e.key.toUpperCase() : e.key;
+
+  if (["Control", "Shift", "Alt"].includes(key)) return;
+
+  keys.push(key);
+  e.target.value = keys.join("+");
+}
+
+// Delete function
+function deleteHotkeyButtonFunction(e) {
+  const btn = e.target;
+  const row = btn.closest('.settings-row-c');
+  if (row) row.remove();
+}
+
+// Event delegation for shortcut input keydown
+settingsListContainer.addEventListener('keydown', (e) => {
+  if (e.target && e.target.classList.contains('shortcut-input')) {
+    inputValidator(e);
+  }
+});
+
+// Event delegation for delete buttons
+settingsListContainer.addEventListener('click', (e) => {
+  if (e.target && e.target.classList.contains('delete-hotkey-button')) {
+    deleteHotkeyButtonFunction(e);
+  }
+});
+
+const saveHotkeysButton = document.getElementById('saveHotkeysButton');
+
+saveHotkeysButton.addEventListener("click", () => {
+  const rows = settingsListContainer.querySelectorAll(".settings-row-c");
+  const newHotkeys = {};
+
+  rows.forEach((row) => {
+    let link = row.querySelector(".link-input").value.trim();
+    const shortcutKey = row.querySelector(".shortcut-input").value.trim();
+
+    // 🛡️ Skip if incomplete
+    if (!link || !shortcutKey) return;
+
+    // 🌐 Ensure https:// is present
+    if (!/^https?:\/\//i.test(link)) {
+      link = `https://${link}`;
+    }
+
+    newHotkeys[shortcutKey] = {
+      shortcutKey,
+      link
+    };
+  });
+
+  const updatedData = {
+    mainSettings: {
+      isOverride: false
+    },
+    shortcuts: newHotkeys
+  };
+
+  chrome.storage.local.set({ hotkeys: updatedData }, () => {
+    console.log("✅ Hotkeys saved with valid links.");
+  });
 });

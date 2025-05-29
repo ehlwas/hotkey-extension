@@ -16,29 +16,56 @@
 // END ANOTHER WAY TO INJECT CONTENT SCRIPTS
 
 
-// chrome.storage.local.get(["hotkeys"], (result) => {
-//   console.log(result.hotkeys)
-// });
-
-
-const hotkeysData = {
+// Default hotkeys settings
+const defaultHotkeysSettings = {
     mainSettings: {
         isOverride: false,
     },
     shortcuts: {
-        "Ctrl+H": {
-            shortcutKey: "Ctrl+H",
-            link: "Facebook"
+        "Ctrl+Shift+F": {
+            shortcutKey: "Ctrl+Shift+F",
+            link: "https://facebook.com/"
         }
     }
+};
+
+function getHotkeys() {
+  return new Promise((resolve, reject) => {
+    chrome.storage.local.get(["hotkeys"], (result) => {
+      if (chrome.runtime.lastError) {
+        reject(chrome.runtime.lastError);
+        return;
+      }
+
+      if (typeof result.hotkeys === "undefined") {
+        // Set default
+        chrome.storage.local.set({ hotkeys: defaultHotkeysSettings }, () => {
+          if (chrome.runtime.lastError) {
+            reject(chrome.runtime.lastError);
+          } else {
+            // console.log("Default hotkeys saved.");
+            resolve(defaultHotkeysSettings);
+          }
+        });
+      } else {
+        resolve(result.hotkeys);
+      }
+    });
+  });
 }
 
+// (async () => {
+//   try {
+//     const hotkeysData = await getHotkeys();
+//     console.log("Hotkeys loaded:", hotkeysData);
+//   } catch (err) {
+//     console.error("Error loading hotkeys:", err);
+//   }
+// })();
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     if (msg.shortcutPressed) {
-
-        
-        console.log("🚀 Opening link from background...");
+        // console.log("🚀 Opening link from background...");
         chrome.tabs.create({ url: msg.url });
     }
 
